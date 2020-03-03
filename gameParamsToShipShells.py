@@ -41,6 +41,7 @@ if writeCondensed:
 
 def selectEssential(data):
     targetKeys = set([
+        "alphaPiercingHE",
         "bulletAirDrag", 
         "bulletAlwaysRicochetAt",
         "bulletDetonator", 
@@ -66,14 +67,13 @@ for ship, attributes in condenseShip.items(): #Ship Art
     added = False
     upgrades = attributes["ShipUpgradeInfo"]
     artilleryNames = set()
-    shellGroups = set()
     for upgradeName, upgradeInfo in upgrades.items():
         if type(upgradeInfo) is dict:
             if 'artillery' in upgradeInfo['components']:
                 for artilleryName in upgradeInfo['components']['artillery']:
                     artilleryNames.add(artilleryName)
 
-    shells = set()
+    shellGroups = set()
     for artilleryName in artilleryNames:
         artilleryConfig = attributes[artilleryName]
         for turrets, turretValues in artilleryConfig.items():
@@ -83,29 +83,33 @@ for ship, attributes in condenseShip.items(): #Ship Art
                         shellGroup = ()
                         for shell in turretValues['ammoList']:
                             added = True
-                            shells.add(shell)
                             shellGroup += shell,
                         shellGroups.add(shellGroup)
     
-    shipShells[ship] = list(shells)
+    shellGroupsEnumerated = {F'Artillery{k}':v for k,v in enumerate(shellGroups)}
+    shipShells[ship] = shellGroupsEnumerated
     if added:
         temp = {}
         tempEssential = {}
-        for shell in shipShells[ship]:
-            ammoType = condenseShell[shell]['ammoType']
-            if not ammoType in temp:
-                temp[ammoType] = {}
-                tempEssential[ammoType] = {}
-            temp[ammoType][shell] = condenseShell[shell]
-            tempEssential[ammoType][shell] = selectEssential(condenseShell[shell])
+        #for shell in shipShells[ship]:
+        for shellGroupNumbers, shellGroupAdded in shellGroupsEnumerated.items():
+            temp[shellGroupNumbers] = {}
+            tempEssential[shellGroupNumbers] = {}
+            for shell in shellGroupAdded:
+                ammoType = condenseShell[shell]['ammoType']
+                if not ammoType in temp[shellGroupNumbers]:
+                    temp[shellGroupNumbers][ammoType] = {}
+                    tempEssential[shellGroupNumbers][ammoType] = {}
+                temp[shellGroupNumbers][ammoType] = condenseShell[shell]
+                tempEssential[shellGroupNumbers][ammoType] = selectEssential(condenseShell[shell])
         
         temp['Tier'] = attributes['level']
         temp['Nation'] = attributes['typeinfo']['nation']
-        temp['ShellGroups'] = list(shellGroups)
+        #temp['ShellGroups'] = {k: v for k, v in enumerate(shellGroups)}
 
         tempEssential['Tier'] = attributes['level']
         tempEssential['Nation'] = attributes['typeinfo']['nation']
-        tempEssential['ShellGroups'] = list(shellGroups)
+        #tempEssential['ShellGroups'] = {k: v for k, v in enumerate(shellGroups)}
 
         shipShellData[ship] = temp
         shipShellDataEssential[ship] = tempEssential
