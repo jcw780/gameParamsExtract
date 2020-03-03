@@ -17,12 +17,15 @@ condenseShip = {}
 condenseGun = {}
 condenseShell = {}
 #counter = 0
-
+#typeInfoTypes = set()
+#typeInfoSpecies = set()
+typeInfo = set()
 with open("GameParams.json", 'r') as f:
     data = json.load(f)
     for k, v in data.items():
         #print(k)
         #print(v["typeinfo"])
+        typeInfo.add((v["typeinfo"]["type"], v["typeinfo"]["species"]))
         if v["typeinfo"]["type"] == 'Ship':
             condenseShip[k] = v
         if v["typeinfo"]["type"] == 'Projectile':
@@ -30,14 +33,15 @@ with open("GameParams.json", 'r') as f:
         elif v["typeinfo"]["type"] == 'Gun' and v["typeinfo"]["species"] == 'Main':
             condenseGun[k] = v
 
+print(typeInfo)
 condensedDirectory = 'condensed'
-writeCondensed = False
+writeCondensed = True
 if writeCondensed:
     print('Writing Condensed Files')
     checkMakeDir(condensedDirectory)
-    writeToFile(condenseShip , condensedDirectory, 'condensendShips.json')
-    writeToFile(condenseShell, condensedDirectory, 'condensendShells.json')
-    writeToFile(condenseGun  , condensedDirectory, 'condensendGuns.json')
+    writeToFile(condenseShip , condensedDirectory, 'condensedShips.json')
+    writeToFile(condenseShell, condensedDirectory, 'condensedShells.json')
+    writeToFile(condenseGun  , condensedDirectory, 'condensedGuns.json')
 
 def selectEssential(data):
     targetKeys = set([
@@ -105,10 +109,14 @@ for ship, attributes in condenseShip.items(): #Ship Art
         
         temp['Tier'] = attributes['level']
         temp['Nation'] = attributes['typeinfo']['nation']
+        temp['Type'] = attributes['typeinfo']['species']
+        temp['ammo_num'] = len(shellGroupsEnumerated)
         #temp['ShellGroups'] = {k: v for k, v in enumerate(shellGroups)}
 
         tempEssential['Tier'] = attributes['level']
         tempEssential['Nation'] = attributes['typeinfo']['nation']
+        tempEssential['Type'] = attributes['typeinfo']['species']
+        tempEssential['ammo_num'] = len(shellGroupsEnumerated)
         #tempEssential['ShellGroups'] = {k: v for k, v in enumerate(shellGroups)}
 
         shipShellData[ship] = temp
