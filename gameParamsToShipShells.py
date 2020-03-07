@@ -12,26 +12,35 @@ def writeToFile(data, filePath, file):
     with open(filePathAppended, 'w') as f:
         f.write(json.dumps(data, indent=4))
     
-
+# Basically condenseGameParams.py ...
 condenseShip = {}
-condenseGun = {}
+condenseSecondaryGun = {}
+condenseMainGun = {}
 condenseShell = {}
+#condense
 #counter = 0
 #typeInfoTypes = set()
 #typeInfoSpecies = set()
-typeInfo = set()
+typeInfo = {}
 with open("GameParams.json", 'r') as f:
     data = json.load(f)
     for k, v in data.items():
         #print(k)
         #print(v["typeinfo"])
-        typeInfo.add((v["typeinfo"]["type"], v["typeinfo"]["species"]))
+        species = v["typeinfo"]["species"]
+        typeV = v["typeinfo"]["type"]
+        if not typeV in typeInfo:
+            typeInfo[typeV] = set()
+        typeInfo[typeV].add(species)
+
         if v["typeinfo"]["type"] == 'Ship':
             condenseShip[k] = v
-        if v["typeinfo"]["type"] == 'Projectile':
+        if v["typeinfo"]["type"] == 'Projectile' and v["typeinfo"]["species"] == 'Artillery':
             condenseShell[k] = v
         elif v["typeinfo"]["type"] == 'Gun' and v["typeinfo"]["species"] == 'Main':
-            condenseGun[k] = v
+            condenseMainGun[k] = v
+        elif v["typeinfo"]["type"] == 'Gun' and v["typeinfo"]["species"] == 'Secondary':
+            condenseSecondaryGun[k] = v
 
 print(typeInfo)
 condensedDirectory = 'condensed'
@@ -39,13 +48,15 @@ writeCondensed = True
 if writeCondensed:
     print('Writing Condensed Files')
     checkMakeDir(condensedDirectory)
-    writeToFile(condenseShip , condensedDirectory, 'condensedShips.json')
-    writeToFile(condenseShell, condensedDirectory, 'condensedShells.json')
-    writeToFile(condenseGun  , condensedDirectory, 'condensedGuns.json')
+    writeToFile(condenseShip        , condensedDirectory, 'condensedShips.json')
+    writeToFile(condenseShell       , condensedDirectory, 'condensedShells.json')
+    writeToFile(condenseMainGun     , condensedDirectory, 'condensedMainGuns.json')
+    writeToFile(condenseSecondaryGun, condensedDirectory, 'condensedSecondaryGuns.json')
 
 def selectEssential(data):
     targetKeys = set([
         "alphaPiercingHE",
+        "alphaPiercingCS",
         "bulletAirDrag", 
         "bulletAlwaysRicochetAt",
         "bulletDetonator", 
@@ -60,7 +71,8 @@ def selectEssential(data):
     ])
     output = {}
     for target in targetKeys:
-        output[target] = data[target]
+        if target in data:
+            output[target] = data[target]
     return output
 
 
