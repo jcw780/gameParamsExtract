@@ -1,6 +1,7 @@
 *.json
 *.data
-toJson/intermediate
+
+*/intermediate
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
