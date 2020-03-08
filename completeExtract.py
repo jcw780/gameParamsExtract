@@ -1,4 +1,4 @@
-import json, os, sys
+import json, os, sys, hashlib
 import toJsonReduceIntermediary
 
 tgtFolder = sys.argv[1]
@@ -16,8 +16,19 @@ def writeToFile(data, filePath, file):
         filePathAppended = F'{filePath}/{file}'
     
     with open(filePathAppended, 'w') as f:
-        f.write(json.dumps(data, indent=4))
-    
+        f.write(json.dumps(data, indent=4, sort_keys=True))
+
+def checkHash(file):
+    BUF_SIZE = 32768 # Read file in 32kb chunks
+    sha256 = hashlib.sha256()
+    with open(file, 'rb') as f:
+        while True:
+            data = f.read(BUF_SIZE)
+            if not data:
+                break
+            sha256.update(data)
+    return sha256.hexdigest()
+
 # Basically condenseGameParams.py ...
 condenseShip = {}
 condenseSecondaryGun = {}
@@ -173,10 +184,14 @@ for nations in output['nationList']:
     checkMakeDir(F'{versionFolder}/{nations}')
 
 print('Writing static files')
+nationTypeHashes = {}
 for nations, nationData in output.items():
     if type(nationData) == dict:
         #print(nationData)
         for types, typeData in nationData.items():
             if types != 'shiptypes':
                 writeToFile(typeData, F'{versionFolder}/{nations}', F'{nations}_{types}.json')
+                nationTypeHashes[F'{nations}_{types}'] = checkHash(F'{versionFolder}/{nations}/{nations}_{types}.json')
         writeToFile(sorted(list(nationData['shiptypes']), reverse=True), F'{versionFolder}/{nations}', F'shiptypes.json')
+
+writeToFile(nationTypeHashes, tgtFolder, 'hashes.json')

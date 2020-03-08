@@ -44,16 +44,18 @@ def run(folder):
     f.write(json.dumps(d, cls=GPEncode, sort_keys=True, indent=4, separators=(',', ': ')))
     f.close()
 
-    BUF_SIZE = 32768 # Read file in 32kb chunks
-    sha256 = hashlib.sha256()
-    with open(F'{folder}/GameParams.json', 'rb') as f:
-        while True:
-            data = f.read(BUF_SIZE)
-            if not data:
-                break
-            sha256.update(data)
+    checkHash = True
+    if checkHash:
+        BUF_SIZE = 32768 # Read file in 32kb chunks
+        sha256 = hashlib.sha256()
+        with open(F'{folder}/GameParams.json', 'rb') as f:
+            while True:
+                data = f.read(BUF_SIZE)
+                if not data:
+                    break
+                sha256.update(data)
 
-    print(F'SHA256: {sha256.hexdigest()}')
+        print(F'SHA256: {sha256.hexdigest()}')
 
 if __name__ == "__main__":
     run('..')
