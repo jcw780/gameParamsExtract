@@ -1,15 +1,33 @@
 import struct, zlib, _pickle as pickle, codecs, json
 import os, hashlib
+import ast
 
 # Derived from:
 # https://github.com/EdibleBug/WoWS-GameParams/blob/master/OneFileToRuleThemAll.py
 
+
 class GPEncode(json.JSONEncoder):
+    def cleanDictionary(self, unclean):
+        clean = {}
+        for k, v in unclean.items():
+            #print(k, v)
+            if(isinstance(v, dict)):
+                v = self.cleanDictionary(v)
+            
+            if(isinstance(k, tuple)):
+                k = str(k)
+            clean[k] = v
+        return clean
+
     def default(self, o):
         try:
             for e in ['Cameras', 'DockCamera']:
                 o.__dict__.pop(e, o.__dict__)
-            return o.__dict__
+            
+            #print('original', o.__dict__)
+            cleaned = self.cleanDictionary(o.__dict__)
+            #print('cleaned', cleaned)
+            return cleaned
         except:
             return {}
 
@@ -56,6 +74,8 @@ def run(folder):
                 sha256.update(data)
 
         print(F'SHA256: {sha256.hexdigest()}')
+        return sha256.hexdigest()
+
 
 if __name__ == "__main__":
     run('..')

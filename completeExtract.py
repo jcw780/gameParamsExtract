@@ -4,7 +4,7 @@ import toJsonReduceIntermediary
 tgtFolder = sys.argv[1]
 #versionFolderName = sys.argv[1]
 
-toJsonReduceIntermediary.run(tgtFolder)
+gPHash = toJsonReduceIntermediary.run(tgtFolder)
 
 def checkMakeDir(directory):
     if not os.path.exists(directory):
@@ -40,6 +40,7 @@ with open(F"{tgtFolder}/GameParams.json", 'r') as f:
     for k, v in data.items():
         #print(k)
         #print(v["typeinfo"])
+        #print(v)
         species = v["typeinfo"]["species"]
         typeV = v["typeinfo"]["type"]
         if not typeV in typeInfo:
@@ -184,7 +185,7 @@ for nations in output['nationList']:
     checkMakeDir(F'{versionFolder}/{nations}')
 
 print('Writing static files')
-nationTypeHashes = {}
+nationTypeHashes = {'gameparams': gPHash}
 for nations, nationData in output.items():
     if type(nationData) == dict:
         #print(nationData)
