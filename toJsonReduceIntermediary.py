@@ -1,6 +1,5 @@
 import struct, zlib, _pickle as pickle, codecs, json
 import os, hashlib
-import ast
 
 # Derived from:
 # https://github.com/EdibleBug/WoWS-GameParams/blob/master/OneFileToRuleThemAll.py
