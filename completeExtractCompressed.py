@@ -10,8 +10,6 @@ class SetEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, set):
             return list(obj)
-        if isinstance(obj, Something):
-            return 'CustomSomethingRepresentation'
         return json.JSONEncoder.default(self, obj)
 
 def writeToFile(data, filePath: str, file: str, prettyPrint: bool = True, compress:bool = False):
@@ -68,9 +66,6 @@ def run(tgtFolder, outputName, existing):
     with open(F"{tgtFolder}/{readFile}.json", 'r') as f:
         data = json.load(f)
         for k, v in data.items():
-            #print(k)
-            #print(v["typeinfo"])
-            #print(v)
             species = v["typeinfo"]["species"]
             typeV = v["typeinfo"]["type"]
             if not typeV in typeInfo:
@@ -201,7 +196,7 @@ def run(tgtFolder, outputName, existing):
 
     writeToFile(hashes, tgtFolder, 'hashes.json')
 
-def batchRun(tgtFolder, root, dirs, files):
+def batchRunFunction(tgtFolder, root, dirs, files):
     if root != tgtFolder:
         baseName = os.path.basename(root)
         baseNameSplit = baseName.split('.')
@@ -212,6 +207,14 @@ def batchRun(tgtFolder, root, dirs, files):
             outputName = '.'.join(baseNameSplit[:4])
         print(baseName, outputName)
         run(root, F'{outputName}_s', baseName)
+
+def batchRun(tgtFolder):
+    def batchGenerator(tgtFolder):
+        for rdf in os.walk(tgtFolder):
+            yield (tgtFolder,) + rdf
+    with Pool(4) as p:
+        r = p.starmap_async(batchRunFunction, batchGenerator(tgtFolder))
+        r.wait()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -224,27 +227,7 @@ if __name__ == "__main__":
     tgtFolder = args.directory
 
     if args.batch:
-        #print(list(os.walk(tgtFolder)))
-        tgt = [(tgtFolder,) + rdf for rdf in os.walk(tgtFolder)]
-        #print(tgt)
-        with Pool(4) as p:
-            r = p.starmap_async(batchRun, tgt)
-            r.wait()
-
-        if False:
-            #print(r, d, f)
-            for root, dirs, files in os.walk(tgtFolder):
-                if root != tgtFolder:
-                    baseName = os.path.basename(root)
-                    baseNameSplit = baseName.split('.')
-                    outputName = ''
-                    if len(baseNameSplit) < 4:
-                        outputName = F'{baseName}.0'
-                    else:
-                        outputName = '.'.join(baseNameSplit[:4])
-                    print(baseName, outputName)
-                    run(root, F'{outputName}_s', baseName)
-        pass
+        batchRun(tgtFolder)
     else:
         outputName = 'compressed'
         if args.output:
