@@ -43,7 +43,7 @@ def checkHash(file):
             sha256.update(data)
     return sha256.hexdigest()
 
-def run(tgtFolder, outputName, existing):
+def run(tgtFolder:str, outputName:str, existing:str, cleanup:bool=False):
     extract = True
     readFile = 'gameparams'
     gPHash = ''
@@ -81,7 +81,8 @@ def run(tgtFolder, outputName, existing):
                 condenseMainGun[k] = v
             elif typeV == 'Gun' and species == 'Secondary':
                 condenseSecondaryGun[k] = v
-
+    if cleanup:
+        os.remove(F"{tgtFolder}/{readFile}.json")
     #print(typeInfo)
     condensedDirectory = F'{tgtFolder}/condensed'
     writeCondensed = False
@@ -93,7 +94,7 @@ def run(tgtFolder, outputName, existing):
         writeToFile(condenseMainGun     , condensedDirectory, 'condensedMainGuns.json')
         writeToFile(condenseSecondaryGun, condensedDirectory, 'condensedSecondaryGuns.json')
 
-    def selectEssential(data):
+    def selectEssential(data: dict):
         targetKeys = set([
             "alphaPiercingHE",
             "alphaPiercingCS",
@@ -196,7 +197,7 @@ def run(tgtFolder, outputName, existing):
 
     writeToFile(hashes, tgtFolder, 'hashes.json')
 
-def batchRunFunction(tgtFolder, root, dirs, files):
+def batchRunFunction(tgtFolder: str, root, dirs, files):
     if root != tgtFolder:
         baseName = os.path.basename(root)
         baseNameSplit = baseName.split('.')
@@ -208,8 +209,8 @@ def batchRunFunction(tgtFolder, root, dirs, files):
         print(baseName, outputName)
         run(root, F'{outputName}_s', baseName)
 
-def batchRun(tgtFolder):
-    def batchGenerator(tgtFolder):
+def batchRun(tgtFolder: str):
+    def batchGenerator(tgtFolder: str):
         for rdf in os.walk(tgtFolder):
             yield (tgtFolder,) + rdf
     with Pool(4) as p:

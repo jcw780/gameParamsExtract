@@ -30,7 +30,7 @@ class GPEncode(json.JSONEncoder):
         except:
             return {}
 
-def run(folder, cleanup=False, searchName="gameparams", outputName="GameParams"):
+def run(folder, cleanup=True, searchName="gameparams", outputName="GameParams"):
     intermediateFileDirectory = 'intermediate'
 
     with open(F'{folder}/{searchName}.data', 'rb') as f:
