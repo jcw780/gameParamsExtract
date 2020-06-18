@@ -30,19 +30,19 @@ class GPEncode(json.JSONEncoder):
         except:
             return {}
 
-def run(folder, cleanup=False):
+def run(folder, cleanup=False, searchName="gameparams", outputName="GameParams"):
     intermediateFileDirectory = 'intermediate'
 
-    if not os.path.exists(F'{folder}/{intermediateFileDirectory}'):
-        os.makedirs(F'{folder}/{intermediateFileDirectory}')
-
-    with open(F'{folder}/GameParams.data', 'rb') as f:
+    with open(F'{folder}/{searchName}.data', 'rb') as f:
         b = []
         while 1:
             z = f.read(1)
             if not z:
                 break
             b.append(z[0])
+
+    if not os.path.exists(F'{folder}/{intermediateFileDirectory}'):
+        os.makedirs(F'{folder}/{intermediateFileDirectory}')
 
     content = zlib.decompress(struct.pack('B'*len(b), *b[::-1]))
     destination = "GameParamsU8NB.txt"
@@ -57,7 +57,7 @@ def run(folder, cleanup=False):
         d = pickle.load(f, encoding='latin1')
 
 
-    f = codecs.open(F'{folder}/GameParams.json', 'w', encoding='latin1')
+    f = codecs.open(F'{folder}/{outputName}.json', 'w', encoding='latin1')
     f.write(json.dumps(d, cls=GPEncode, sort_keys=True, indent=4, separators=(',', ': ')))
     f.close()
     if cleanup:
@@ -67,14 +67,12 @@ def run(folder, cleanup=False):
     if checkHash:
         BUF_SIZE = 32768 # Read file in 32kb chunks
         sha256 = hashlib.sha256()
-        with open(F'{folder}/GameParams.json', 'rb') as f:
+        with open(F'{folder}/{outputName}.json', 'rb') as f:
             while True:
                 data = f.read(BUF_SIZE)
                 if not data:
                     break
                 sha256.update(data)
-
-        print(F'SHA256: {sha256.hexdigest()}')
         return sha256.hexdigest()
 
 
