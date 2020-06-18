@@ -1,5 +1,5 @@
 import struct, zlib, _pickle as pickle, codecs, json
-import os, hashlib
+import os, hashlib, shutil
 
 # Derived from:
 # https://github.com/EdibleBug/WoWS-GameParams/blob/master/OneFileToRuleThemAll.py
@@ -30,7 +30,7 @@ class GPEncode(json.JSONEncoder):
         except:
             return {}
 
-def run(folder):
+def run(folder, cleanup=False):
     intermediateFileDirectory = 'intermediate'
 
     if not os.path.exists(F'{folder}/{intermediateFileDirectory}'):
@@ -60,6 +60,8 @@ def run(folder):
     f = codecs.open(F'{folder}/GameParams.json', 'w', encoding='latin1')
     f.write(json.dumps(d, cls=GPEncode, sort_keys=True, indent=4, separators=(',', ': ')))
     f.close()
+    if cleanup:
+        shutil.rmtree(F'{folder}/{intermediateFileDirectory}')
 
     checkHash = True
     if checkHash:
