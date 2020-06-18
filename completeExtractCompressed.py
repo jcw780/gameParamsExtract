@@ -1,7 +1,15 @@
-import json, os, sys, hashlib, zlib
+import json, os, hashlib, zlib, argparse
 import toJsonReduceIntermediary
 
-tgtFolder = sys.argv[1]
+parser = argparse.ArgumentParser()
+parser.add_argument("directory", type=str, help="Target Directory")
+parser.add_argument("-o", "--output", type=str, help="increase output verbosity")
+
+args = parser.parse_args()
+tgtFolder = args.directory
+outputName = 'compressed'
+if args.output:
+    outputName = args.output
 #versionFolderName = sys.argv[1]
 
 gPHash = toJsonReduceIntermediary.run(tgtFolder, cleanup=True)
@@ -188,9 +196,12 @@ for ships, data in shipShellName.items():
             if not shellName in cShells:
                 cShells[shellName] = selectEssential(condenseShell[shellName])
 
-writeToFile(compressed, tgtFolder, 'compressed.json', prettyPrint=True)
-writeToFile(compressed, tgtFolder, 'compressed.gz', prettyPrint=False, compress=True)
+writeToFile(compressed, tgtFolder, F'{outputName}.json', prettyPrint=True)
+writeToFile(compressed, tgtFolder, F'{outputName}.gz', prettyPrint=False, compress=True)
 
-nationTypeHashes = {'gameparams': gPHash}
-writeToFile(nationTypeHashes, tgtFolder, 'hashes.json')
+hashes = {'gameparams': gPHash}
+hashes['full'] = checkHash(F'{tgtFolder}/{outputName}.json')
+hashes['compressed'] = checkHash(F'{tgtFolder}/{outputName}.gz')
+
+writeToFile(hashes, tgtFolder, 'hashes.json')
 
