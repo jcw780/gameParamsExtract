@@ -21,7 +21,7 @@ def writeToFile(data, filePath: str, file: str, prettyPrint: bool = True, compre
     if prettyPrint:
         outputString = json.dumps(data, indent=4, sort_keys=True, cls=SetEncoder)
     else:
-        outputString = json.dumps(data, cls=SetEncoder)
+        outputString = json.dumps(data, sort_keys=True, cls=SetEncoder)
 
     output = outputString
     if compress:
@@ -43,7 +43,7 @@ def checkHash(file):
             sha256.update(data)
     return sha256.hexdigest()
 
-def run(tgtFolder:str, outputName:str, existing:str, cleanup:bool=False):
+def run(tgtFolder:str, outputDirectory:str, outputName:str, existing:str, cleanup:bool=False):
     extract = True
     readFile = 'gameparams'
     gPHash = ''
@@ -51,6 +51,7 @@ def run(tgtFolder:str, outputName:str, existing:str, cleanup:bool=False):
         tempRF = existing
         if os.path.isfile(F'{tgtFolder}/{tempRF}.json'):
             extract = False
+            cleanup = False
             gPHash = checkHash(F'{tgtFolder}/{tempRF}.json')
             readFile = tempRF
     if extract:
@@ -188,16 +189,16 @@ def run(tgtFolder:str, outputName:str, existing:str, cleanup:bool=False):
                 if not shellName in cShells:
                     cShells[shellName] = selectEssential(condenseShell[shellName])
 
-    writeToFile(compressed, tgtFolder, F'{outputName}.json', prettyPrint=True)
-    writeToFile(compressed, tgtFolder, F'{outputName}.gz', prettyPrint=False, compress=True)
+    writeToFile(compressed, outputDirectory, F'{outputName}.json', prettyPrint=True)
+    #writeToFile(compressed, outputDirectory, F'{outputName}.gz', prettyPrint=False, compress=True)
 
     hashes = {'gameparams': gPHash}
     hashes['full'] = checkHash(F'{tgtFolder}/{outputName}.json')
-    hashes['compressed'] = checkHash(F'{tgtFolder}/{outputName}.gz')
+    #hashes['compressed'] = checkHash(F'{tgtFolder}/{outputName}.gz')
 
     writeToFile(hashes, tgtFolder, 'hashes.json')
 
-def batchRunFunction(tgtFolder: str, root, dirs, files):
+def batchRunFunction(tgtFolder: str, outputDirectory: str, root, dirs, files):
     if root != tgtFolder:
         baseName = os.path.basename(root)
         baseNameSplit = baseName.split('.')
@@ -207,20 +208,21 @@ def batchRunFunction(tgtFolder: str, root, dirs, files):
         else:
             outputName = '.'.join(baseNameSplit[:4])
         print(baseName, outputName)
-        run(root, F'{outputName}_s', baseName)
+        run(root, outputDirectory, F'{outputName}_s', baseName)
 
-def batchRun(tgtFolder: str):
-    def batchGenerator(tgtFolder: str):
+def batchRun(tgtFolder: str, outputDirectory: str):
+    def batchGenerator(tgtFolder: str, outputDirectory):
         for rdf in os.walk(tgtFolder):
-            yield (tgtFolder,) + rdf
+            yield (tgtFolder, outputDirectory) + rdf
     with Pool(4) as p:
-        r = p.starmap_async(batchRunFunction, batchGenerator(tgtFolder))
+        r = p.starmap_async(batchRunFunction, batchGenerator(tgtFolder, outputDirectory))
         r.wait()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("directory", type=str, help="Target Directory")
     parser.add_argument("-e", "--existing", type=str, help="use existing json if available")
+    parser.add_argument("-d", "--outputDirectory", type=str, help="output directory")
     parser.add_argument("-o", "--output", type=str, help="output file name")
     parser.add_argument("-b", "--batch", help="batch folders within folders", action="store_true")
 
@@ -228,9 +230,10 @@ if __name__ == "__main__":
     tgtFolder = args.directory
 
     if args.batch:
-        batchRun(tgtFolder)
+        #print(args)
+        batchRun(tgtFolder, args.outputDirectory)
     else:
         outputName = 'compressed'
         if args.output:
             outputName = args.output
-        run(tgtFolder, outputName, args.existing)
+        run(tgtFolder, args.outputDirectory, outputName, args.existing)

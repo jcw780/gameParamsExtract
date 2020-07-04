@@ -8,7 +8,7 @@ tgtFolder = args.directory
 fileList = []
 for root, dirs, files in os.walk(tgtFolder):
     for file in files:
-        if file.endswith(".gz"):
+        if file.endswith(".json") and not file.startswith("versions"):
             print(os.path.join(root, file), file)
             fileList.append(file.split('_')[0])
 
