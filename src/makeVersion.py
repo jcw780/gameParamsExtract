@@ -30,7 +30,7 @@ class SetEncoder(json.JSONEncoder):
             return list(obj)
         return json.JSONEncoder.default(self, obj)
 
-def writeToFile(data, filePath: str, file: str, prettyPrint: bool = True, compress:bool = False):
+def writeToFile(data: object, filePath: str, file: str, prettyPrint: bool = True, compress:bool = False):
     filePathAppended = file
     if filePath:
         filePathAppended = F'{filePath}/{file}'
