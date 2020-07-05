@@ -2,12 +2,22 @@ import argparse
 from utility import writeToFile, checkMakeDir
 from gpToDict import gpToDict
 
-def run(target: str, output: str) -> None:
+def run(target: str, output: str) -> str:
+    """
+    Write GameParams.json from GameParams.data
+
+    Parameters:
+        target (str): Full path of gameparams.data
+        output (str): Full path of output - does not make directory
+    Return:
+        (str): SHA256 Hash of gameparams.data
+    """
     data, fileHash = gpToDict(target)
     writeToFile(
         data, output, 
         indent=4, sort_keys=True
     )
+    return fileHash
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -20,5 +30,9 @@ if __name__ == "__main__":
     outName = 'GameParams.json'
     if args.output:
         outName = args.output
-    run(F'{args.inDirectory}/GameParams.data', F'{args.outDirectory}/{outName}')
+    fileHash = run(F'{args.inDirectory}/GameParams.data', F'{args.outDirectory}/{outName}')
+    writeToFile(
+        {'Hash Type': 'SHA256', 'GameParams': fileHash}, F'{args.outDirectory}/Hashes.json',
+        indent=4, sort_keys=True
+    )
     

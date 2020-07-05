@@ -3,7 +3,9 @@ from collections import defaultdict
 from gpToDict import gpToDict, makeEntities
 from utility import writeToFile
 
-# Make Artillery
+'''
+For extracting and packaging shell information - single
+'''
 
 def getArtilleryData(entityTypes: dict):
     shipComponentData = defaultdict(dict)
@@ -51,7 +53,7 @@ def makeShipArtilleryShell(shipArtilleryData: dict, entityTypes: dict):
             shellsReached |= ammoSet
     return (shipShellData, shellsReached)
 
-def formatNationTypeShip(shipArtilleryShell: dict):
+def formatNationTypeShip(shipArtilleryShell: dict) -> dict:
     formatted = defaultdict(lambda: defaultdict(dict))
     for ship, data in shipArtilleryShell.items():
         nation = data['Nation']
@@ -61,7 +63,7 @@ def formatNationTypeShip(shipArtilleryShell: dict):
         formatted[nation][shipType][ship] = data
     return formatted
 
-def getShells(shellsReached: dict, entityTypes: dict, essential=True):
+def getShells(shellsReached: dict, entityTypes: dict, essential=True) -> dict:
     def selectEssential(data: dict):
         targetKeys = set([
             "alphaPiercingHE",
@@ -93,7 +95,7 @@ def getShells(shellsReached: dict, entityTypes: dict, essential=True):
         #print(shellData[shell])
     return shellData
 
-def run(gpData: object):
+def run(gpData: object) -> dict:
     entityTypes = makeEntities(gpData)
     artilleryComponents = getArtilleryData(entityTypes)
     shipShellData, shellsReached = makeShipArtilleryShell(artilleryComponents, entityTypes)

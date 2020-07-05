@@ -5,6 +5,10 @@ from gpToDict import gpToDict
 from utility import writeToFile, readFromFile
 import extractArtillery
 
+'''
+For extracting and packaging shell information - batch
+'''
+
 def run(tgtFolder:str, outputDirectory:str, outputName:str, existing:str, cleanup:bool=False):
     readFile: str = 'gameparams'
     gPHash: str = ''

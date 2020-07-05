@@ -17,6 +17,15 @@ class GPEncode(json.JSONEncoder):
             return {}
 
 def gpToDict(gpFilePath, showHash=True) -> typing.Tuple[object, str]:
+    """
+    Reads GameParams.data and converts it to list/dict 
+    
+    Parameters:
+        gpFilePath (str): Full file path of GameParams.data
+        showHash (bool) = True: Print hash at read
+    Returns:
+        tuple(object, str): [json data, hash]
+    """
     with open(gpFilePath, 'rb') as f:
         gpBytes: bytes = f.read()
     fileHash: str = checkByteHash(gpBytes)
@@ -29,6 +38,13 @@ def gpToDict(gpFilePath, showHash=True) -> typing.Tuple[object, str]:
     return (json.loads(gpDataStr), fileHash)
 
 def makeEntities(gpData: dict) -> dict:
+    """
+    Takes GameParams data and formats it by type
+    Parameters:
+        gpData (dict): GameParams data
+    Returns:
+        (dict): format: [type] : {entityName: value}
+    """
     entityTypes = defaultdict(dict)
     for index, value in gpData.items():
         dataType: str = value["typeinfo"]["type"]
