@@ -54,7 +54,11 @@ def makeShipArtilleryShell(shipArtilleryData: dict, entityTypes: dict):
 def formatNationTypeShip(shipArtilleryShell: dict):
     formatted = defaultdict(lambda: defaultdict(dict))
     for ship, data in shipArtilleryShell.items():
-        formatted[data['Nation']][data['Type']][ship] = data
+        nation = data['Nation']
+        shipType = data['Type']
+        data.pop('Nation')
+        data.pop('Type')
+        formatted[nation][shipType][ship] = data
     return formatted
 
 def getShells(shellsReached, entityTypes: dict, essential=True):
@@ -69,7 +73,6 @@ def getShells(shellsReached, entityTypes: dict, essential=True):
             "bulletDiametr", 
             "bulletKrupp", 
             "bulletMass", 
-            "name", 
             "bulletRicochetAt", 
             "bulletSpeed",
             "bulletCapNormalizeMaxAngle"

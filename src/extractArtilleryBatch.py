@@ -53,7 +53,6 @@ if __name__ == "__main__":
     tgtFolder = args.directory
 
     if args.batch:
-        #print(args)
         batchRun(tgtFolder, args.outputDirectory)
     else:
         outputName = 'compressed'
