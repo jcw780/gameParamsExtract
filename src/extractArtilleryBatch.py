@@ -6,9 +6,9 @@ from utility import writeToFile, readFromFile
 import extractArtillery
 
 def run(tgtFolder:str, outputDirectory:str, outputName:str, existing:str, cleanup:bool=False):
-    readFile = 'gameparams'
-    gPHash = ''
-    data = {}
+    readFile: str = 'gameparams'
+    gPHash: str = ''
+    data: dict = {}
     extract = True
     if existing:
         tempRF = existing
@@ -18,8 +18,8 @@ def run(tgtFolder:str, outputDirectory:str, outputName:str, existing:str, cleanu
             data = readFromFile(F'{tgtFolder}/{tempRF}.json')
     if extract:
         data, gPHash = gpToDict(F'{tgtFolder}/{readFile}.data')
-    formattedArtillery = extractArtillery.run(data)
-    writeToFile(formattedArtillery, F'{outputDirectory}/{outputName}.json', indent=4, sort_keys=True)
+    formattedArtillery: dict = extractArtillery.run(data)
+    writeToFile(formattedArtillery, F'{outputDirectory}/{outputName}.json', sort_keys=True)
 
 def batchRunFunction(tgtFolder: str, outputDirectory: str, root, dirs, files):
     if root != tgtFolder:
@@ -44,18 +44,20 @@ def batchRun(tgtFolder: str, outputDirectory: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("directory", type=str, help="Target Directory")
-    parser.add_argument("-e", "--existing", type=str, help="use existing json if available")
+    #parser.add_argument("-e", "--existing", type=str, help="use existing json if available") 
+    # ^ probably not useful
     parser.add_argument("-d", "--outputDirectory", type=str, help="output directory")
     parser.add_argument("-o", "--output", type=str, help="output file name")
-    parser.add_argument("-b", "--batch", help="batch folders within folders", action="store_true")
+    #parser.add_argument("-b", "--batch", help="batch folders within folders", action="store_true") 
+    # ^ probably should always be turned on...
 
     args = parser.parse_args()
     tgtFolder = args.directory
 
-    if args.batch:
+    if True:
         batchRun(tgtFolder, args.outputDirectory)
-    else:
+    '''else:
         outputName = 'compressed'
         if args.output:
             outputName = args.output
-        run(tgtFolder, args.outputDirectory, outputName, args.existing)
+        run(tgtFolder, args.outputDirectory, outputName, args.existing)'''

@@ -2,7 +2,7 @@ import argparse
 from utility import writeToFile, checkMakeDir
 from gpToDict import gpToDict
 
-def run(target, output):
+def run(target: str, output: str) -> None:
     data, fileHash = gpToDict(target)
     writeToFile(
         data, output, 

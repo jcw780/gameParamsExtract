@@ -61,7 +61,7 @@ def formatNationTypeShip(shipArtilleryShell: dict):
         formatted[nation][shipType][ship] = data
     return formatted
 
-def getShells(shellsReached, entityTypes: dict, essential=True):
+def getShells(shellsReached: dict, entityTypes: dict, essential=True):
     def selectEssential(data: dict):
         targetKeys = set([
             "alphaPiercingHE",

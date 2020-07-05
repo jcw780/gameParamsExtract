@@ -19,16 +19,16 @@ class GPEncode(json.JSONEncoder):
 def gpToDict(gpFilePath, showHash=True) -> typing.Tuple[object, str]:
     with open(gpFilePath, 'rb') as f:
         gpBytes: bytes = f.read()
-    fileHash = checkByteHash(gpBytes)
+    fileHash: str = checkByteHash(gpBytes)
     if showHash:
-        print(F'{gpFilePath} SHA256: {fileHash}')
+        print(F'SHA256: {fileHash}')
     gpPacked: bytes = struct.pack('B' * len(gpBytes), *gpBytes[::-1])
     gpUnpacked: bytes = zlib.decompress(gpPacked)
     gpDict: dict = pickle.loads(gpUnpacked, encoding='windows-1251')
     gpDataStr: str = json.dumps(gpDict, cls=GPEncode, ensure_ascii=False)
     return (json.loads(gpDataStr), fileHash)
 
-def makeEntities(gpData: dict):
+def makeEntities(gpData: dict) -> dict:
     entityTypes = defaultdict(dict)
     for index, value in gpData.items():
         dataType: str = value["typeinfo"]["type"]
