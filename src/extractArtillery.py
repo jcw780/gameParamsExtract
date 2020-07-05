@@ -1,32 +1,9 @@
-import os, struct, zlib, pickle, json
+import json, argparse
 from collections import defaultdict
+from gpToDict import gpToDict, makeEntities
+from utility import writeToFile
 
-class GPEncode(json.JSONEncoder):
-    def default(self, o):
-        try:
-            for e in ['Cameras', 'DockCamera', 'damageDistribution']:
-                o.__dict__.pop(e, o.__dict__)
-            return o.__dict__
-        except AttributeError:
-            return {}
-
-def gpToDict(gpFilePath):
-    with open(gpFilePath, 'rb') as f:
-        gpBytes: bytes = f.read()
-    gpPacked: bytes = struct.pack('B' * len(gpBytes), *gpBytes[::-1])
-    gpUnpacked: bytes = zlib.decompress(gpPacked)
-    gpDict: dict = pickle.loads(gpUnpacked, encoding='windows-1251')
-    gpDataStr: str = json.dumps(gpDict, cls=GPEncode, ensure_ascii=False)
-    return json.loads(gpDataStr)
-
-def makeEntities(gpData: dict):
-    entityTypes = defaultdict(dict)
-    for index, value in gpData.items():
-        dataType: str = value["typeinfo"]["type"]
-        entityTypes[dataType][index] = value
-    return entityTypes
-
-## Make Artillery
+# Make Artillery
 
 def getArtilleryData(entityTypes: dict):
     shipComponentData = defaultdict(dict)
@@ -69,7 +46,7 @@ def makeShipArtilleryShell(shipArtilleryData: dict, entityTypes: dict):
             for ammo in ammoSet:
                 data = entityTypes['Projectile'][ammo]
                 ammoCategorized[data['ammoType']] = ammo
-            print(shipName, artilleryName, ammoCategorized)
+            #print(shipName, artilleryName, ammoCategorized)
             shipShellData[shipName]['artillery'][artilleryName] = ammoCategorized
             shellsReached |= ammoSet
     return (shipShellData, shellsReached)
@@ -77,7 +54,7 @@ def makeShipArtilleryShell(shipArtilleryData: dict, entityTypes: dict):
 def formatNationTypeShip(shipArtilleryShell: dict):
     formatted = defaultdict(lambda: defaultdict(dict))
     for ship, data in shipArtilleryShell.items():
-        formatted[data['Nation']][data['Type']] = {ship: data}
+        formatted[data['Nation']][data['Type']][ship] = data
     return formatted
 
 def getShells(shellsReached, entityTypes: dict, essential=True):
@@ -110,20 +87,32 @@ def getShells(shellsReached, entityTypes: dict, essential=True):
             shellData[shell] = selectEssential(shells[shell])
         else:
             shellData[shell] = shells[shell]
-        print(shellData[shell])
+        #print(shellData[shell])
     return shellData
 
-def run():
-    gpData: dict = gpToDict('test/GameParams.data')
+def run(gpData: object):
     entityTypes = makeEntities(gpData)
     artilleryComponents = getArtilleryData(entityTypes)
     shipShellData, shellsReached = makeShipArtilleryShell(artilleryComponents, entityTypes)
-    output = {
+    return {
         'shells': getShells(shellsReached, entityTypes), 
         'ships': formatNationTypeShip(shipShellData)
     }
 
 if __name__ == "__main__":
-    run()
-    pass
+    parser = argparse.ArgumentParser()
+    parser.add_argument("inDirectory", type=str, help="Input directory")
+    parser.add_argument("outDirectory", type=str, help="Output directory")
+    parser.add_argument("-o", "--output", type=str, help="Output file name")
+    args = parser.parse_args()
+
+    outputName = 'artillery.json'
+    if args.output:
+        outputName = args.output
+    data, fileHash = gpToDict(F'{args.inDirectory}/GameParams.data') 
+    writeToFile(
+        run(data), 
+        F'{args.outDirectory}/{outputName}',
+        indent=4, sort_keys=True
+    )
 
