@@ -1,4 +1,4 @@
-import argparse
+import argparse, operator
 from collections import defaultdict
 from gpToDict import gpToDict, makeEntities
 
@@ -6,7 +6,7 @@ def run(target):
     entities = makeEntities(gpToDict(target)[0])
     #print(entities.keys())
     turretTargets = ['radiusOnDelim', 'radiusOnMax', 'radiusOnZero', 'delim', 'idealRadius', 'minRadius']
-    artilleryTargets = []
+    artilleryTargets = ['taperDist']
 
     radiusShips = defaultdict(list)
     for shipName, shipData in entities['Ship'].items():
@@ -41,7 +41,11 @@ def run(target):
             radiusShips[dataTuple].append(shipName)
         except:
             pass
-    for disp, ships in radiusShips.items():
+
+    sortedKeys = list(radiusShips.keys())
+    sortedKeys.sort(key=operator.itemgetter(slice(0, -1)))
+    for disp in sortedKeys:
+        ships = radiusShips[disp]
         outstr = ''
         for i, items in enumerate(turretTargets):
             outstr = F'{outstr}{items}: {disp[i]} '
