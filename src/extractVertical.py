@@ -1,10 +1,17 @@
 import argparse, operator
 from collections import defaultdict
 from gpToDict import gpToDict, makeEntities
+from utility import readFromFile
 
 def run(target):
-    entities = makeEntities(gpToDict(target)[0])
-    #print(entities.keys())
+    fileType = target.split('.')[-1]
+    if fileType == 'data':
+        entities = makeEntities(gpToDict(target)[0])
+    elif fileType == 'json':
+        entities = makeEntities(readFromFile(target))
+    else:
+        raise NotImplementedError
+
     turretTargets = ['radiusOnDelim', 'radiusOnMax', 'radiusOnZero', 'delim', 'idealRadius', 'minRadius']
     artilleryTargets = ['taperDist']
 

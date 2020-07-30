@@ -8,21 +8,23 @@ For extracting and packaging shell information - single
 '''
 
 def getArtilleryData(entityTypes: dict):
+    exclude = set(['disabled', 'preserved', 'unavailable'])
     shipComponentData = defaultdict(dict)
     for shipName, v in entityTypes['Ship'].items():
-        #print(v['ShipUpgradeInfo'])
-        componentSet = set()
-        upgrades = v['ShipUpgradeInfo']
-        for name, data in upgrades.items():
-            if type(data) == dict:
-                components = data['components']
-                if 'artillery' in components:
-                    tgtComponents = components['artillery']
-                    #print(name, components['artillery'])
-                    componentSet |= set(tgtComponents)
-        for component in componentSet:
-            if component in v:
-                shipComponentData[shipName][component] = v[component]
+        if not v['group'] in exclude: 
+            #print(v['ShipUpgradeInfo'])
+            componentSet = set()
+            upgrades = v['ShipUpgradeInfo']
+            for name, data in upgrades.items():
+                if type(data) == dict:
+                    components = data['components']
+                    if 'artillery' in components:
+                        tgtComponents = components['artillery']
+                        #print(name, components['artillery'])
+                        componentSet |= set(tgtComponents)
+            for component in componentSet:
+                if component in v:
+                    shipComponentData[shipName][component] = v[component]
     return shipComponentData
 
 def makeShipArtilleryShell(shipArtilleryData: dict, entityTypes: dict):
@@ -50,6 +52,47 @@ def makeShipArtilleryShell(shipArtilleryData: dict, entityTypes: dict):
                 ammoCategorized[data['ammoType']] = ammo
             #print(shipName, artilleryName, ammoCategorized)
             shipShellData[shipName]['artillery'][artilleryName] = ammoCategorized
+            shellsReached |= ammoSet
+    return (shipShellData, shellsReached)
+
+def makeShipArtilleryAccuracyShell(shipArtilleryData: dict, entityTypes: dict):
+    shellsReached = set()
+    shipShellData = {}
+
+    turretTargets = ['radiusOnDelim', 'radiusOnMax', 'radiusOnZero', 'delim', 'idealRadius', 'minRadius']
+    artilleryTargets = ['taperDist', 'sigmaCount']
+    for shipName, artilleryGroup in shipArtilleryData.items():
+        shipData = entityTypes['Ship'][shipName]
+        shipTypeInfo = shipData['typeinfo']
+        shipShellData[shipName] = {
+            'artillery': {},
+            'Nation': shipTypeInfo['nation'],
+            'Tier': shipData['level'],
+            'Type': shipTypeInfo['species']
+        }
+        for artilleryName, artillery in artilleryGroup.items():
+            ammoSet = set()
+            accuracyData = {}
+            for pTurret, pTurretData in artillery.items():
+                if type(pTurretData) == dict and 'typeinfo' in pTurretData:
+                    typeinfo = pTurretData['typeinfo']
+                    if typeinfo['species'] == 'Main' and typeinfo['type'] == 'Gun':
+                        ammoSet |= set(pTurretData['ammoList'])
+                        for targets in turretTargets:
+                            if targets in pTurretData:
+                                accuracyData[targets] = pTurretData[targets]
+            ammoCategorized = {}
+            for ammo in ammoSet:
+                data = entityTypes['Projectile'][ammo]
+                ammoCategorized[data['ammoType']] = ammo
+            #print(shipName, artilleryName, ammoCategorized)
+            if len(ammoSet) > 0:
+                for targets in artilleryTargets:
+                    accuracyData[targets] = artillery[targets]
+
+            shipShellData[shipName]['artillery'][artilleryName] = {
+                'shells': ammoCategorized, **accuracyData
+            }
             shellsReached |= ammoSet
     return (shipShellData, shellsReached)
 
@@ -95,10 +138,13 @@ def getShells(shellsReached: dict, entityTypes: dict, essential=True) -> dict:
         #print(shellData[shell])
     return shellData
 
-def run(gpData: object) -> dict:
+def run(gpData: object, accuracy=True) -> dict:
     entityTypes = makeEntities(gpData)
     artilleryComponents = getArtilleryData(entityTypes)
-    shipShellData, shellsReached = makeShipArtilleryShell(artilleryComponents, entityTypes)
+    if accuracy:
+        shipShellData, shellsReached = makeShipArtilleryAccuracyShell(artilleryComponents, entityTypes)
+    else:
+        shipShellData, shellsReached = makeShipArtilleryShell(artilleryComponents, entityTypes)
     return {
         'shells': getShells(shellsReached, entityTypes), 
         'ships': formatNationTypeShip(shipShellData)
