@@ -4,12 +4,13 @@ from multiprocessing import Pool
 from gpToDict import gpToDict
 from utility import writeToFile, readFromFile
 import extractArtillery
+import extractGM
 
 '''
 For extracting and packaging shell information - batch
 '''
 
-def run(tgtFolder:str, outputDirectory:str, outputName:str, existing:str, cleanup:bool=False):
+def run(tgtFolder:str, outputDirectory:str, locale:dict, outputName:str, existing:str, cleanup:bool=False):
     readFile: str = 'gameparams'
     gPHash: str = ''
     data: dict = {}
@@ -22,10 +23,10 @@ def run(tgtFolder:str, outputDirectory:str, outputName:str, existing:str, cleanu
             data = readFromFile(F'{tgtFolder}/{tempRF}.json')
     if extract:
         data, gPHash = gpToDict(F'{tgtFolder}/{readFile}.data')
-    formattedArtillery: dict = extractArtillery.run(data)
+    formattedArtillery: dict = extractArtillery.run(data, locale=locale)
     writeToFile(formattedArtillery, F'{outputDirectory}/{outputName}.json', sort_keys=True)
 
-def batchRunFunction(tgtFolder: str, outputDirectory: str, root, dirs, files):
+def batchRunFunction(tgtFolder: str, outputDirectory: str, locale: dict, root, dirs, files):
     if root != tgtFolder:
         baseName = os.path.basename(root)
         baseNameSplit = baseName.split('.')
@@ -35,12 +36,12 @@ def batchRunFunction(tgtFolder: str, outputDirectory: str, root, dirs, files):
         else:
             outputName = '.'.join(baseNameSplit[:4])
         print(baseName, outputName)
-        run(root, outputDirectory, F'{outputName}_s', baseName)
+        run(root, outputDirectory, locale, F'{outputName}_s', baseName)
 
-def batchRun(tgtFolder: str, outputDirectory: str):
+def batchRun(tgtFolder: str, outputDirectory: str, locale: dict):
     def batchGenerator(tgtFolder: str, outputDirectory):
         for rdf in os.walk(tgtFolder):
-            yield (tgtFolder, outputDirectory) + rdf
+            yield (tgtFolder, outputDirectory, locale) + rdf
     with Pool(4) as p:
         r = p.starmap_async(batchRunFunction, batchGenerator(tgtFolder, outputDirectory))
         r.wait()
@@ -50,16 +51,21 @@ if __name__ == "__main__":
     parser.add_argument("directory", type=str, help="Target Directory")
     #parser.add_argument("-e", "--existing", type=str, help="use existing json if available") 
     # ^ probably not useful
-    parser.add_argument("-d", "--outputDirectory", type=str, help="output directory")
-    parser.add_argument("-o", "--output", type=str, help="output file name")
+    parser.add_argument("outDirectory", type=str, help="Output directory")
+    parser.add_argument("-l", "--locale", type=str, help="Localization Directory")
+    #parser.add_argument("-o", "--output", type=str, help="output file name")
     #parser.add_argument("-b", "--batch", help="batch folders within folders", action="store_true") 
     # ^ probably should always be turned on...
 
     args = parser.parse_args()
     tgtFolder = args.directory
 
+    lData = {}
+    if locale := args.locale:
+        lData = extractGM.run(F'{locale}/global.mo')
+
     if True:
-        batchRun(tgtFolder, args.outputDirectory)
+        batchRun(tgtFolder, args.outDirectory, lData)
     '''else:
         outputName = 'compressed'
         if args.output:
