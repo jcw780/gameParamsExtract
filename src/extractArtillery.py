@@ -67,7 +67,7 @@ def makeShipArtilleryAccuracyShell(shipArtilleryData: dict, entityTypes: dict, l
         shipTypeInfo = shipData['typeinfo']
 
         localeName = shipName
-        localeID = F'IDS_{shipName.split("_")[0]}'
+        localeID = F'IDS_{shipName.split("_")[0]}_FULL'
         if localeID in locale:
             localeName = locale[localeID]
         
@@ -165,6 +165,7 @@ if __name__ == "__main__":
     parser.add_argument("outDirectory", type=str, help="Output directory")
     parser.add_argument("-l", "--locale", type=str, help="Localization Directory")
     parser.add_argument("-o", "--output", type=str, help="Output file name")
+    parser.add_argument("--readable", help="Readable Output")
     args = parser.parse_args()
 
     outputName = 'artillery.json'
@@ -176,9 +177,16 @@ if __name__ == "__main__":
         lData = extractGM.run(F'{locale}/global.mo')
     
     data, fileHash = gpToDict(F'{args.inDirectory}/GameParams.data') 
-    writeToFile(
-        run(data, locale=lData), 
-        F'{args.outDirectory}/{outputName}',
-        indent=4, sort_keys=True
-    )
+    if args.readable:
+        writeToFile(
+            run(data, locale=lData), 
+            F'{args.outDirectory}/{outputName}',
+            indent=4, sort_keys=True
+        )
+    else:
+        writeToFile(
+            run(data, locale=lData), 
+            F'{args.outDirectory}/{outputName}',
+            sort_keys=True
+        )
 
