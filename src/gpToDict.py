@@ -50,3 +50,37 @@ def makeEntities(gpData: dict) -> dict:
         dataType: str = value["typeinfo"]["type"]
         entityTypes[dataType][index] = value
     return entityTypes
+
+def getComponentData(entityTypes: dict, target, exclude=True):
+    if exclude:
+        shipComponentData = getComponentExclude(entityTypes, target)
+    else:
+        shipComponentData = getComponentInclude(entityTypes, target)
+    return shipComponentData
+
+def getComponentExclude(entityTypes: dict, target):
+    exclude = set(['disabled', 'preserved', 'unavailable'])
+    shipComponentData = defaultdict(dict)
+    for shipName, v in entityTypes['Ship'].items():
+        if not v['group'] in exclude: 
+            getComponentIncluded(shipComponentData, shipName, v, target)
+    return shipComponentData
+
+def getComponentInclude(entityTypes: dict, target):
+    shipComponentData = defaultdict(dict)
+    for shipName, v in entityTypes['Ship'].items():
+        getComponentIncluded(shipComponentData, shipName, v, target)
+    return shipComponentData
+
+def getComponentIncluded(shipComponentData: dict, shipName, v, target):
+    componentSet = set()
+    upgrades = v['ShipUpgradeInfo']
+    for name, data in upgrades.items():
+        if type(data) == dict:
+            components = data['components']
+            if target in components:
+                tgtComponents = components[target]
+                componentSet |= set(tgtComponents)
+    for component in componentSet:
+        if component in v:
+            shipComponentData[shipName][component] = v[component]

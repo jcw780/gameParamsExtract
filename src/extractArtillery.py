@@ -1,32 +1,12 @@
 import json, argparse
 from collections import defaultdict
-from gpToDict import gpToDict, makeEntities
+from gpToDict import gpToDict, makeEntities, getComponentData
 from utility import writeToFile
 import extractGM
 
 '''
 For extracting and packaging shell information - single
 '''
-
-def getArtilleryData(entityTypes: dict):
-    exclude = set(['disabled', 'preserved', 'unavailable'])
-    shipComponentData = defaultdict(dict)
-    for shipName, v in entityTypes['Ship'].items():
-        if not v['group'] in exclude: 
-            #print(v['ShipUpgradeInfo'])
-            componentSet = set()
-            upgrades = v['ShipUpgradeInfo']
-            for name, data in upgrades.items():
-                if type(data) == dict:
-                    components = data['components']
-                    if 'artillery' in components:
-                        tgtComponents = components['artillery']
-                        #print(name, components['artillery'])
-                        componentSet |= set(tgtComponents)
-            for component in componentSet:
-                if component in v:
-                    shipComponentData[shipName][component] = v[component]
-    return shipComponentData
 
 def makeShipArtilleryShell(shipArtilleryData: dict, entityTypes: dict):
     shellsReached = set()
@@ -60,8 +40,8 @@ def makeShipArtilleryAccuracyShell(shipArtilleryData: dict, entityTypes: dict, l
     shellsReached = set()
     shipShellData = {}
 
-    turretTargets = ['radiusOnDelim', 'radiusOnMax', 'radiusOnZero', 'delim', 'idealRadius', 'minRadius']
-    artilleryTargets = ['taperDist', 'sigmaCount']
+    turretTargets = ['radiusOnDelim', 'radiusOnMax', 'radiusOnZero', 'delim', 'idealRadius', 'minRadius', 'idealDistance']
+    artilleryTargets = ['taperDist', 'sigmaCount', 'maxDist']
     for shipName, artilleryGroup in shipArtilleryData.items():
         shipData = entityTypes['Ship'][shipName]
         shipTypeInfo = shipData['typeinfo']
@@ -149,7 +129,8 @@ def getShells(shellsReached: dict, entityTypes: dict, essential=True) -> dict:
 
 def run(gpData: object, accuracy=True, locale={}) -> dict:
     entityTypes = makeEntities(gpData)
-    artilleryComponents = getArtilleryData(entityTypes)
+    #artilleryComponents = getArtilleryData(entityTypes)
+    artilleryComponents = getComponentData(entityTypes, 'artillery')
     if accuracy:
         shipShellData, shellsReached = makeShipArtilleryAccuracyShell(artilleryComponents, entityTypes, locale)
     else:
@@ -165,7 +146,7 @@ if __name__ == "__main__":
     parser.add_argument("outDirectory", type=str, help="Output directory")
     parser.add_argument("-l", "--locale", type=str, help="Localization Directory")
     parser.add_argument("-o", "--output", type=str, help="Output file name")
-    parser.add_argument("--readable", help="Readable Output")
+    parser.add_argument("--readable", help="Readable Output", action="store_true")
     args = parser.parse_args()
 
     outputName = 'artillery.json'

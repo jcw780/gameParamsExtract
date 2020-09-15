@@ -15,5 +15,8 @@ if __name__ == "__main__":
     #parser.add_argument("outDirectory", type=str, help="Output directory")
     #parser.add_argument("-o", "--output", type=str, help="Output file name")
     args = parser.parse_args()
-    run(args.inDirectory)
+    data = run(args.inDirectory)
+    for k, v in data.items():
+        if v == 'Engine Boost':
+            print(k)
 
