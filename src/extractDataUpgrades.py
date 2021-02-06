@@ -12,9 +12,9 @@ def parseUpgrades(upgrades: dict, locale: dict = {}, selector : Callable[[dict],
     def makeElement(current, current_data):
         localeName = F'IDS_{current}'
         if localeName in locale:
-            return [current, selector(current_data), locale[localeName]]
+            return [current, locale[localeName], selector(current_data)]
         else: 
-            return [current, selector(current_data), ""]
+            return [current, "", selector(current_data)]
         
 
     for current, current_data in upgrades.items():
@@ -49,16 +49,63 @@ def selectComponents(inDict: dict) -> dict:
 def acquireUsableComponents(upgrades: list) -> list:
     componentsReached = set()
     for item in upgrades:
-        componentDict = item[1]["components"]
+        componentDict = item[2]["components"]
         for componentType, components in componentDict.items():
             for component in components:
                 componentsReached.add(component)
     return list(componentsReached)
 
+def formatNationTypeShip(shipArtilleryShell: dict) -> dict:
+    formatted = defaultdict(lambda: defaultdict(dict))
+    for ship, data in shipArtilleryShell.items():
+        if len(data['artillery'].keys()) > 0:
+            nation = data['Nation']
+            shipType = data['Type']
+            data.pop('Nation')
+            data.pop('Type')
+            formatted[nation][shipType][ship] = data
+    return formatted
+
+def getShells(shellsReached: set, entityTypes: dict, essential=True) -> dict:
+    def selectEssential(data: dict):
+        targetKeys = set([
+            "alphaPiercingHE",
+            "alphaPiercingCS",
+            "bulletAirDrag", 
+            "bulletAlwaysRicochetAt",
+            "bulletDetonator", 
+            "bulletDetonatorThreshold", 
+            "bulletDiametr", 
+            "bulletKrupp", 
+            "bulletMass", 
+            "bulletRicochetAt", 
+            "bulletSpeed",
+            "bulletCapNormalizeMaxAngle"
+        ])
+        output = {}
+        for target in targetKeys:
+            if target in data:
+                output[target] = data[target]
+        return output
+    
+    shells = entityTypes['Projectile']
+    shellData = {}
+    for shell in shellsReached:
+        if essential:
+            shellData[shell] = selectEssential(shells[shell])
+        else:
+            shellData[shell] = shells[shell]
+        #print(shellData[shell])
+    return shellData
+
 def run(gpData: object, locale={}):# -> dict:
     entityTypes = makeEntities(gpData)
-    shipData = {}
+    extractedShipData = {}
     
+    shellsReached = set()
+    turretTargets = ['radiusOnDelim', 'radiusOnMax', 'radiusOnZero', 'delim', 'idealRadius', 'minRadius', 'idealDistance']
+    artilleryTargets = ['taperDist', 'sigmaCount', 'maxDist']
+
     for shipName, shipData in entityTypes['Ship'].items():
         upgrades = shipData['ShipUpgradeInfo']
         upgradesParsed = parseUpgrades(upgrades, locale, selectComponents)
@@ -71,26 +118,58 @@ def run(gpData: object, locale={}):# -> dict:
         if "_Suo" in upgradesParsed:
             fireControlList = acquireUsableComponents(upgradesParsed["_Suo"])
 
-        print(shipName, json.dumps(upgradesParsed, indent=4), artilleryList, fireControlList)
-
         shipTypeInfo = shipData['typeinfo']
         localeName = shipName
         localeID = F'IDS_{shipName.split("_")[0]}_FULL'
         if localeID in locale:
             localeName = locale[localeID]
         singleShipData = {
-            'artillery': {},
+            'artillery': defaultdict(lambda: dict()),
+            'fireControl': defaultdict(lambda: dict()),
+            'upgrades': upgradesParsed,
             'Nation': shipTypeInfo['nation'],
             'Tier': shipData['level'],
             'Type': shipTypeInfo['species'],
             'Name': localeName
         }
-        
+                
+        for artilleryName in artilleryList:
+            artillery = shipData[artilleryName]
+            ammoSet = set()
+            accuracyData = {}
+            numBarrels = 0
+            for pTurret, pTurretData in artillery.items():
+                if type(pTurretData) == dict and 'typeinfo' in pTurretData:
+                    typeinfo = pTurretData['typeinfo']
+                    if typeinfo['species'] == 'Main' and typeinfo['type'] == 'Gun':
+                        ammoSet |= set(pTurretData['ammoList'])
+                        numBarrels += pTurretData['numBarrels']
+                        for targets in turretTargets:
+                            if targets in pTurretData:
+                                accuracyData[targets] = pTurretData[targets]
+            ammoCategorized = {}
+            for ammo in ammoSet:
+                data = entityTypes['Projectile'][ammo]
+                ammoCategorized[data['ammoType']] = ammo
+            #print(shipName, artilleryName, ammoCategorized)
+            if len(ammoSet) > 0:
+                for targets in artilleryTargets:
+                    accuracyData[targets] = artillery[targets]
+            
+            singleShipData['artillery'][artilleryName] = {
+                'shells': ammoCategorized, **accuracyData, 'numBarrels': numBarrels
+            }
 
-    #return {
-    #    'shells': getShells(shellsReached, entityTypes), 
-    #    'ships': formatNationTypeShip(shipShellData)
-    #}
+            shellsReached |= ammoSet
+            
+        for fireControlName in fireControlList:
+            singleShipData['fireControl'][fireControlName] = shipData[fireControlName]
+        extractedShipData[shipName] = singleShipData
+    
+    return {
+        'shells': getShells(shellsReached, entityTypes), 
+        'ships': formatNationTypeShip(extractedShipData)
+    }
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -111,18 +190,17 @@ if __name__ == "__main__":
     
     data, fileHash = gpToDict(F'{args.inDirectory}/GameParams.data') 
     
-    print(json.dumps(lData, indent=4))
-    run(data, locale=lData)
-    '''
+    result = run(data, locale=lData)
+    outputPath = F'{args.outDirectory}/{outputName}'
+    
+    print(json.dumps(result, indent=4))
     if args.readable:
         writeToFile(
-            run(data, locale=lData), 
-            F'{args.outDirectory}/{outputName}',
+            result, outputPath,
             indent=4, sort_keys=True
         )
     else:
         writeToFile(
-            run(data, locale=lData), 
-            F'{args.outDirectory}/{outputName}',
+            result, outputPath,
             sort_keys=True
-        )'''
+        )
