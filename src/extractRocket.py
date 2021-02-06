@@ -4,8 +4,11 @@ from gpToDict import gpToDict, makeEntities
 def run(target):
     entities = makeEntities(gpToDict(target)[0])
 
-    def calcPenetration(krupp, mass, caliber, velocity):
+    def calcPenetrationOld(krupp, mass, caliber, velocity):
         return 0.5561613 * krupp / 2400 * (mass ** 0.5506) / ((caliber * 1000) ** 0.6521) * (velocity ** 1.1001)
+    
+    def calcPenetration(krupp, mass, caliber, velocity):
+        return 0.00046905491615181766 * krupp / 2400 * (mass ** 0.5506) / ((caliber) ** 0.6521) * (velocity ** 1.4822064892953855)
 
     for name, value in entities['Projectile'].items():
         if value['typeinfo']['species'] == 'Bomb':
