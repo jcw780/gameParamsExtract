@@ -17,6 +17,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     data = run(args.inDirectory)
     for k, v in data.items():
-        if v == 'Engine Boost':
+        if v == 'Hatsuharu (A)':
             print(k)
 

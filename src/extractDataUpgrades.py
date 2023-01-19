@@ -10,7 +10,7 @@ def parseUpgrades(upgrades: dict, locale: dict = {}, selector : Callable[[dict],
     groupedSortedUpgrades = defaultdict(lambda: list())
 
     def makeElement(current, current_data):
-        localeName = F'IDS_{current}'
+        localeName = F'IDS_{current.upper()}'
         if localeName in locale:
             return [current, locale[localeName], selector(current_data)]
         else: 

@@ -35,7 +35,11 @@ def gpToDict(gpFilePath, showHash=True) -> typing.Tuple[object, str]:
     gpUnpacked: bytes = zlib.decompress(gpPacked)
     gpDict: dict = pickle.loads(gpUnpacked, encoding='windows-1251')
     gpDataStr: str = json.dumps(gpDict, cls=GPEncode, ensure_ascii=False)
-    return (json.loads(gpDataStr), fileHash)
+    gpDataParsed = json.loads(gpDataStr)
+    if isinstance(gpDataParsed, list):
+        gpDataParsed = gpDataParsed[0]
+    
+    return (gpDataParsed, fileHash)
 
 def makeEntities(gpData: dict) -> dict:
     """
